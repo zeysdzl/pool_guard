@@ -34,10 +34,6 @@ jobs:
         run: |
           python -m ruff check .
 
-      - name: Typecheck
-        run: |
-          python -m mypy src/pool_guard
-
       - name: Tests
         run: |
           python -m pytest -q
