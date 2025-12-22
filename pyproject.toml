@@ -6,10 +6,12 @@ description = "Pool Guard - Edge AI Pool Safety"
 readme = "README.md"
 
 [tool.ruff]
-line-length = 100
-target-version = "py310"
-select = ["E", "F", "I", "B", "UP"]
-ignore = ["E501"]
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["B905"]
+
 
 [tool.mypy]
 python_version = "3.10"
