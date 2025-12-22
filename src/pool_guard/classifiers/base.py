@@ -14,5 +14,4 @@ class Classification:
 
 
 class Classifier(Protocol):
-    def classify_person_crop(self, crop_bgr: np.ndarray) -> Classification:
-        ...
+    def classify_person_crop(self, crop_bgr: np.ndarray) -> Classification: ...

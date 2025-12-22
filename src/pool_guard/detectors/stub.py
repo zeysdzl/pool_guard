@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import List
-
 import numpy as np
 
 from pool_guard.detectors.base import Detection
@@ -19,7 +17,7 @@ class StubDetector:
         self.conf = conf
         self._tick = 0
 
-    def detect(self, frame_bgr: np.ndarray) -> List[Detection]:
+    def detect(self, frame_bgr: np.ndarray) -> list[Detection]:
         self._tick += 1
         if frame_bgr is None or frame_bgr.size == 0:
             return []

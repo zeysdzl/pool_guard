@@ -12,7 +12,9 @@ class GPIOAlarmSink:
     Import is platform-guarded so PC/CI won't break.
     """
 
-    def __init__(self, buzzer_pin: int, led_pin: int | None, active_high: bool, pulse_seconds: float) -> None:
+    def __init__(
+        self, buzzer_pin: int, led_pin: int | None, active_high: bool, pulse_seconds: float
+    ) -> None:
         self.buzzer_pin = buzzer_pin
         self.led_pin = led_pin
         self.active_high = active_high

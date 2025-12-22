@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Tuple
-
 import numpy as np
 
 from pool_guard.classifiers.base import Classification
@@ -13,7 +11,9 @@ class TFLiteRuntimeClassifier:
     Assumption: model outputs a single float = P(child).
     """
 
-    def __init__(self, model_path: str, input_size: int = 160, child_threshold: float = 0.5) -> None:
+    def __init__(
+        self, model_path: str, input_size: int = 160, child_threshold: float = 0.5
+    ) -> None:
         if not model_path:
             raise ValueError("model_path is required for TFLiteRuntimeClassifier")
         self.model_path = model_path
@@ -30,7 +30,9 @@ class TFLiteRuntimeClassifier:
     def _preprocess(self, crop_bgr: np.ndarray) -> np.ndarray:
         import cv2
 
-        img = cv2.resize(crop_bgr, (self.input_size, self.input_size), interpolation=cv2.INTER_LINEAR)
+        img = cv2.resize(
+            crop_bgr, (self.input_size, self.input_size), interpolation=cv2.INTER_LINEAR
+        )
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         x = img.astype(np.float32) / 255.0
         x = np.expand_dims(x, axis=0)  # NHWC

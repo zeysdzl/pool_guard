@@ -1,16 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Tuple
 
-import numpy as np
-
-
-PointF = Tuple[float, float]
-PointI = Tuple[int, int]
+PointF = tuple[float, float]
+PointI = tuple[int, int]
 
 
-def point_in_polygon(point: PointI, polygon: List[PointI]) -> bool:
+def point_in_polygon(point: PointI, polygon: list[PointI]) -> bool:
     """
     Ray casting algorithm.
     polygon: list of (x,y) in pixels.
@@ -34,11 +30,11 @@ def point_in_polygon(point: PointI, polygon: List[PointI]) -> bool:
 @dataclass(frozen=True)
 class Zone:
     zone_id: str
-    polygon_norm: List[PointF]
+    polygon_norm: list[PointF]
     enabled: bool = True
 
-    def polygon_pixels(self, frame_w: int, frame_h: int) -> List[PointI]:
-        pts: List[PointI] = []
+    def polygon_pixels(self, frame_w: int, frame_h: int) -> list[PointI]:
+        pts: list[PointI] = []
         for x, y in self.polygon_norm:
             px = int(round(x * frame_w))
             py = int(round(y * frame_h))

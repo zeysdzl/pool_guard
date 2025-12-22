@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Protocol
+from typing import Protocol
 
 import numpy as np
 
@@ -16,5 +16,4 @@ class Detection:
 
 
 class Detector(Protocol):
-    def detect(self, frame_bgr: np.ndarray) -> List[Detection]:
-        ...
+    def detect(self, frame_bgr: np.ndarray) -> list[Detection]: ...

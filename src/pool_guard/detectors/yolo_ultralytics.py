@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import List, Optional
-
 import numpy as np
 
 from pool_guard.detectors.base import Detection
@@ -32,7 +30,7 @@ class UltralyticsYOLODetector:
 
         self._model = YOLO(model_path)
 
-    def detect(self, frame_bgr: np.ndarray) -> List[Detection]:
+    def detect(self, frame_bgr: np.ndarray) -> list[Detection]:
         # ultralytics expects BGR ok; returns boxes in xyxy
         res = self._model.predict(
             source=frame_bgr,
@@ -41,7 +39,7 @@ class UltralyticsYOLODetector:
             device=self.device,
             verbose=False,
         )
-        dets: List[Detection] = []
+        dets: list[Detection] = []
         if not res:
             return dets
 

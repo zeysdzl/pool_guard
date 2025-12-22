@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import threading
 from dataclasses import dataclass
-from typing import Optional, Union
 
 import numpy as np
 
@@ -27,22 +26,22 @@ class ThreadedCapture:
       - Webcam index as string: uri: "0" (or "1", "2"...)
     """
 
-    def __init__(self, uri: str, fps_limit: float = 10.0, resize_width: Optional[int] = 640) -> None:
+    def __init__(self, uri: str, fps_limit: float = 10.0, resize_width: int | None = 640) -> None:
         self.uri = uri
         self.fps_limit = float(fps_limit)
         self.resize_width = resize_width
 
         self._cap = None
-        self._thread: Optional[StoppableThread] = None
+        self._thread: StoppableThread | None = None
         self._lock = threading.Lock()
-        self._latest: Optional[FramePacket] = None
+        self._latest: FramePacket | None = None
         self._running = False
 
     def start(self) -> None:
         import cv2  # local import keeps CI lighter
 
         # --- Webcam support: if uri is a numeric string, treat as camera index.
-        src: Union[str, int] = self.uri
+        src: str | int = self.uri
         if isinstance(src, str):
             s = src.strip()
             if s.isdigit():
@@ -67,7 +66,7 @@ class ThreadedCapture:
             except Exception:
                 pass
 
-    def read_latest(self) -> Optional[FramePacket]:
+    def read_latest(self) -> FramePacket | None:
         with self._lock:
             return self._latest
 
@@ -90,7 +89,9 @@ class ThreadedCapture:
                 if w > 0 and w != self.resize_width:
                     scale = self.resize_width / float(w)
                     nh = max(1, int(h * scale))
-                    frame = cv2.resize(frame, (self.resize_width, nh), interpolation=cv2.INTER_LINEAR)
+                    frame = cv2.resize(
+                        frame, (self.resize_width, nh), interpolation=cv2.INTER_LINEAR
+                    )
 
             ts = now_s()
             if min_dt > 0 and (ts - last_emit) < min_dt:

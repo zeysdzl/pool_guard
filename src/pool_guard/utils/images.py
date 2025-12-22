@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Tuple
 
 import numpy as np
 
@@ -14,7 +13,7 @@ class BBox:
     x2: int
     y2: int
 
-    def clamp(self, w: int, h: int) -> "BBox":
+    def clamp(self, w: int, h: int) -> BBox:
         x1 = max(0, min(self.x1, w - 1))
         y1 = max(0, min(self.y1, h - 1))
         x2 = max(0, min(self.x2, w - 1))
@@ -31,7 +30,7 @@ class BBox:
     def height(self) -> int:
         return max(0, self.y2 - self.y1)
 
-    def center(self) -> Tuple[int, int]:
+    def center(self) -> tuple[int, int]:
         return (self.x1 + self.x2) // 2, (self.y1 + self.y2) // 2
 
 

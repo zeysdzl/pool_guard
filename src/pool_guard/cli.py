@@ -1,16 +1,15 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import argparse
-from typing import List
 
-from pool_guard.config import load_config
+from pool_guard.alarms import CompositeAlarm, GPIOAlarmSink, HTTPAlarmSink, RateLimiter
 from pool_guard.capture import ThreadedCapture
-from pool_guard.detectors import StubDetector, UltralyticsYOLODetector
 from pool_guard.classifiers import StubClassifier, TFLiteRuntimeClassifier, TorchScriptClassifier
-from pool_guard.zone import Zone
-from pool_guard.alarms import CompositeAlarm, RateLimiter, HTTPAlarmSink, GPIOAlarmSink
-from pool_guard.logging import setup_logger, JSONLEventStore
+from pool_guard.config import load_config
+from pool_guard.detectors import StubDetector, UltralyticsYOLODetector
+from pool_guard.logging import JSONLEventStore, setup_logger
 from pool_guard.pipeline import PipelineRunner
+from pool_guard.zone import Zone
 
 
 def _build_detector(cfg, force_stub: bool):
@@ -49,7 +48,9 @@ def _build_alarm(cfg, logger):
     sinks = []
     # HTTP (opsiyonel)
     if cfg.http.enabled:
-        sinks.append(HTTPAlarmSink(url=cfg.http.url, timeout_s=cfg.http.timeout_s, headers=cfg.http.headers))
+        sinks.append(
+            HTTPAlarmSink(url=cfg.http.url, timeout_s=cfg.http.timeout_s, headers=cfg.http.headers)
+        )
         logger.info("HTTP alarm enabled.")
     # GPIO (Windows'ta zaten init olamaz; yakalayıp kapatıyoruz)
     if cfg.gpio.enabled:
@@ -70,7 +71,7 @@ def _build_alarm(cfg, logger):
     return CompositeAlarm(sinks=sinks, limiter=limiter)
 
 
-def main(argv: List[str] | None = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="pool_guard", description="Pool Guard (Edge AI Pool Safety)")
     ap.add_argument("--config", default="configs/default.yaml", help="Path to YAML config.")
     ap.add_argument("--dotenv", default=".env", help="Path to .env file (optional).")
@@ -82,7 +83,9 @@ def main(argv: List[str] | None = None) -> int:
     logger = setup_logger(cfg.logging.level)
     store = JSONLEventStore(cfg.logging.events_path)
 
-    cap = ThreadedCapture(uri=cfg.source.uri, fps_limit=cfg.source.fps_limit, resize_width=cfg.source.resize_width)
+    cap = ThreadedCapture(
+        uri=cfg.source.uri, fps_limit=cfg.source.fps_limit, resize_width=cfg.source.resize_width
+    )
     cap.start()
 
     detector = _build_detector(cfg.detector, force_stub=args.stub)
@@ -102,20 +105,24 @@ def main(argv: List[str] | None = None) -> int:
         person_class_id=cfg.detector.person_class_id,
         inference_stride=cfg.pipeline.inference_stride,
         max_people_per_frame=cfg.pipeline.max_people_per_frame,
-        draw_debug=cfg.pipeline.draw_debug,   # <-- EKLE
-        headless=cfg.pipeline.headless, 
+        draw_debug=cfg.pipeline.draw_debug,  # <-- EKLE
+        headless=cfg.pipeline.headless,
         logger=logger,
     )
 
     # API opsiyonel
     if cfg.api.enabled and not args.no_api:
         try:
-            from pool_guard.api import create_app
-            from waitress import serve
             import threading
 
+            from waitress import serve
+
+            from pool_guard.api import create_app
+
             app = create_app(runner)
-            t = threading.Thread(target=lambda: serve(app, host=cfg.api.host, port=cfg.api.port), daemon=True)
+            t = threading.Thread(
+                target=lambda: serve(app, host=cfg.api.host, port=cfg.api.port), daemon=True
+            )
             t.start()
             logger.info(f"API started at http://{cfg.api.host}:{cfg.api.port}")
         except Exception as e:

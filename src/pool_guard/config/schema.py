@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, List, Literal, Optional, Tuple
+from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -9,13 +9,15 @@ class SourceConfig(BaseModel):
     kind: Literal["rtsp", "mp4"] = "rtsp"
     uri: str = Field(..., description="RTSP URL or MP4 file path")
     fps_limit: float = Field(10.0, ge=0.0, description="0 means unlimited")
-    resize_width: Optional[int] = Field(640, ge=64, description="Resize keeping aspect. None disables.")
+    resize_width: int | None = Field(
+        640, ge=64, description="Resize keeping aspect. None disables."
+    )
     buffer_latest_only: bool = True
 
 
 class DetectorConfig(BaseModel):
     backend: Literal["ultralytics_yolo", "stub"] = "stub"
-    model_path: Optional[str] = None
+    model_path: str | None = None
     conf_threshold: float = Field(0.35, ge=0.0, le=1.0)
     iou_threshold: float = Field(0.45, ge=0.0, le=1.0)
     device: str = "cpu"
@@ -24,7 +26,7 @@ class DetectorConfig(BaseModel):
 
 class ClassifierConfig(BaseModel):
     backend: Literal["tflite_runtime", "torchscript", "stub"] = "stub"
-    model_path: Optional[str] = None
+    model_path: str | None = None
     input_size: int = Field(160, ge=64)
     child_threshold: float = Field(0.5, ge=0.0, le=1.0)
     # label mapping assumption: output score = P(child)
@@ -34,12 +36,12 @@ class ClassifierConfig(BaseModel):
 class ZoneConfig(BaseModel):
     zone_id: str = "danger"
     # normalized polygon points: (x,y) in [0,1]
-    polygon: List[Tuple[float, float]] = Field(..., min_length=3)
+    polygon: list[tuple[float, float]] = Field(..., min_length=3)
     enabled: bool = True
 
     @field_validator("polygon")
     @classmethod
-    def _validate_points(cls, pts: List[Tuple[float, float]]):
+    def _validate_points(cls, pts: list[tuple[float, float]]):
         for x, y in pts:
             if not (0.0 <= x <= 1.0 and 0.0 <= y <= 1.0):
                 raise ValueError("Zone polygon points must be normalized in [0,1].")
@@ -49,7 +51,7 @@ class ZoneConfig(BaseModel):
 class AlarmGPIOConfig(BaseModel):
     enabled: bool = False
     buzzer_pin: int = 18
-    led_pin: Optional[int] = 23
+    led_pin: int | None = 23
     active_high: bool = True
     pulse_seconds: float = Field(0.3, ge=0.05, le=5.0)
 
@@ -58,7 +60,7 @@ class AlarmHTTPConfig(BaseModel):
     enabled: bool = False
     url: str = ""
     timeout_s: float = Field(2.0, ge=0.2, le=10.0)
-    headers: Dict[str, str] = Field(default_factory=dict)
+    headers: dict[str, str] = Field(default_factory=dict)
 
 
 class AlarmConfig(BaseModel):
@@ -91,7 +93,7 @@ class AppConfig(BaseModel):
     source: SourceConfig
     detector: DetectorConfig = Field(default_factory=DetectorConfig)
     classifier: ClassifierConfig = Field(default_factory=ClassifierConfig)
-    zones: List[ZoneConfig]
+    zones: list[ZoneConfig]
     alarm: AlarmConfig = Field(default_factory=AlarmConfig)
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
     pipeline: PipelineConfig = Field(default_factory=PipelineConfig)

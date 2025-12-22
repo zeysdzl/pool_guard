@@ -1,9 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
-
-import numpy as np
-from flask import Flask, jsonify, request, Response
+from flask import Flask, Response, jsonify
 
 from pool_guard.pipeline import PipelineRunner
 

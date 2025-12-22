@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -22,7 +22,7 @@ class PipelineRunner:
         capture: ThreadedCapture,
         detector: Detector,
         classifier: Classifier,
-        zones: List[Zone],
+        zones: list[Zone],
         alarm: CompositeAlarm,
         store: JSONLEventStore,
         person_class_id: int,
@@ -48,27 +48,32 @@ class PipelineRunner:
         self.window_name = window_name
         self.logger = logger
 
-        self._last_frame: Optional[np.ndarray] = None
-        self._last_status: Dict[str, Any] = {}
+        self._last_frame: np.ndarray | None = None
+        self._last_status: dict[str, Any] = {}
         self._imshow_failed_once = False
 
         # Debug window init
         self._win_inited: bool = False
 
-    def get_last_frame(self) -> Optional[np.ndarray]:
+    def get_last_frame(self) -> np.ndarray | None:
         return self._last_frame
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         return self._last_status
 
     # ---------- Debug drawing helpers ----------
 
-    def _zone_polygon_norm(self, z: Zone) -> Optional[List[Tuple[float, float]]]:
+    def _zone_polygon_norm(self, z: Zone) -> list[tuple[float, float]] | None:
         # Try common attribute names without assuming a single implementation
         for attr in ("polygon_norm", "polygon", "points", "points_norm"):
             if hasattr(z, attr):
                 pts = getattr(z, attr)
-                if isinstance(pts, list) and pts and isinstance(pts[0], (list, tuple)) and len(pts[0]) == 2:
+                if (
+                    isinstance(pts, list)
+                    and pts
+                    and isinstance(pts[0], (list, tuple))
+                    and len(pts[0]) == 2
+                ):
                     return [(float(a), float(b)) for a, b in pts]
         return None
 
@@ -76,7 +81,7 @@ class PipelineRunner:
         import cv2
 
         # If Zone has its own draw(), prefer that.
-        if hasattr(z, "draw") and callable(getattr(z, "draw")):
+        if hasattr(z, "draw") and callable(z.draw):
             try:
                 # Try common signatures
                 try:
@@ -93,8 +98,16 @@ class PipelineRunner:
         if not pts_norm:
             return
 
-        pts = np.array([[int(x * w), int(y * h)] for x, y in pts_norm], dtype=np.int32).reshape((-1, 1, 2))
-        cv2.polylines(frame, [pts], isClosed=True, color=(0, 0, 255) if active else (255, 255, 255), thickness=2)
+        pts = np.array([[int(x * w), int(y * h)] for x, y in pts_norm], dtype=np.int32).reshape(
+            (-1, 1, 2)
+        )
+        cv2.polylines(
+            frame,
+            [pts],
+            isClosed=True,
+            color=(0, 0, 255) if active else (255, 255, 255),
+            thickness=2,
+        )
 
         # Label
         try:
@@ -113,7 +126,9 @@ class PipelineRunner:
             cv2.LINE_AA,
         )
 
-    def _draw_bbox(self, frame: np.ndarray, det, cls_label: str, cls_conf: float, should_alarm: bool) -> None:
+    def _draw_bbox(
+        self, frame: np.ndarray, det, cls_label: str, cls_conf: float, should_alarm: bool
+    ) -> None:
         import cv2
 
         x1, y1, x2, y2 = int(det.bbox.x1), int(det.bbox.y1), int(det.bbox.x2), int(det.bbox.y2)
@@ -181,7 +196,7 @@ class PipelineRunner:
         frame_seen = 0
         try:
             while True:
-                pkt: Optional[FramePacket] = self.capture.read_latest()
+                pkt: FramePacket | None = self.capture.read_latest()
                 if pkt is None:
                     sleep_s(0.01)
                     continue
@@ -199,7 +214,9 @@ class PipelineRunner:
 
                 dets = self.detector.detect(frame)
                 people = [d for d in dets if d.class_id == self.person_class_id]
-                people = sorted(people, key=lambda d: d.conf, reverse=True)[: self.max_people_per_frame]
+                people = sorted(people, key=lambda d: d.conf, reverse=True)[
+                    : self.max_people_per_frame
+                ]
 
                 alarms_fired = 0
                 cooldown_hits = 0
@@ -215,7 +232,7 @@ class PipelineRunner:
                     cls = self.classifier.classify_person_crop(person_crop)
 
                     cx, cy = det.bbox.center()
-                    in_zone_id: Optional[str] = None
+                    in_zone_id: str | None = None
 
                     for z in self.zones:
                         if not getattr(z, "enabled", True):
@@ -226,7 +243,7 @@ class PipelineRunner:
 
                     should_alarm = (cls.label == "child") and (in_zone_id is not None)
 
-                    event: Dict[str, Any] = {
+                    event: dict[str, Any] = {
                         "ts_s": now_s(),
                         "source": self.source_name,
                         "frame_ts_s": pkt.ts_s,
@@ -244,7 +261,12 @@ class PipelineRunner:
                     }
 
                     if should_alarm and in_zone_id:
-                        ae = AlarmEvent(ts_s=event["ts_s"], source=self.source_name, zone_id=in_zone_id, payload=event)
+                        ae = AlarmEvent(
+                            ts_s=event["ts_s"],
+                            source=self.source_name,
+                            zone_id=in_zone_id,
+                            payload=event,
+                        )
                         ok = self.alarm.trigger(ae)
                         if ok:
                             alarms_fired += 1
@@ -276,7 +298,11 @@ class PipelineRunner:
                     "people": len(people),
                     "alarms_fired": alarms_fired,
                     "cooldown_hits": cooldown_hits,
-                    "zones": [getattr(z, "zone_id", "zone") for z in self.zones if getattr(z, "enabled", True)],
+                    "zones": [
+                        getattr(z, "zone_id", "zone")
+                        for z in self.zones
+                        if getattr(z, "enabled", True)
+                    ],
                 }
 
                 # Show window if configured

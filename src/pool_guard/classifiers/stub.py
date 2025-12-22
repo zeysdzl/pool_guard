@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from typing import Literal, Optional
+from typing import Literal
 
 import numpy as np
 
 from pool_guard.classifiers.base import Classification
-
 
 StubMode = Literal["adult", "child", "alternate", "random"]
 
@@ -25,7 +24,7 @@ class StubClassifier:
         self,
         child_threshold: float = 0.5,
         mode: StubMode = "adult",
-        seed: Optional[int] = 0,
+        seed: int | None = 0,
     ) -> None:
         self.child_threshold = float(child_threshold)
         self.mode: StubMode = mode

@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-from typing import List
-
 from pool_guard.alarms.base import AlarmEvent, AlarmSink
 from pool_guard.alarms.rate_limiter import RateLimiter
 
 
 class CompositeAlarm:
-    def __init__(self, sinks: List[AlarmSink], limiter: RateLimiter) -> None:
+    def __init__(self, sinks: list[AlarmSink], limiter: RateLimiter) -> None:
         self.sinks = sinks
         self.limiter = limiter
 

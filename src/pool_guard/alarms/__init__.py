@@ -4,4 +4,11 @@ from pool_guard.alarms.gpio import GPIOAlarmSink
 from pool_guard.alarms.http import HTTPAlarmSink
 from pool_guard.alarms.rate_limiter import RateLimiter
 
-__all__ = ["AlarmEvent", "AlarmSink", "CompositeAlarm", "GPIOAlarmSink", "HTTPAlarmSink", "RateLimiter"]
+__all__ = [
+    "AlarmEvent",
+    "AlarmSink",
+    "CompositeAlarm",
+    "GPIOAlarmSink",
+    "HTTPAlarmSink",
+    "RateLimiter",
+]

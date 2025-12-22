@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, Tuple
 
 from pool_guard.utils.time import now_s
 
@@ -9,7 +8,7 @@ from pool_guard.utils.time import now_s
 @dataclass
 class RateLimiter:
     cooldown_s: float
-    _last: Dict[str, float]
+    _last: dict[str, float]
 
     def __init__(self, cooldown_s: float) -> None:
         self.cooldown_s = max(0.0, cooldown_s)

@@ -2,17 +2,17 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any, Dict, Tuple
+from typing import Any
 
 import yaml
 from dotenv import load_dotenv
 
+from pool_guard.config.schema import AppConfig
 from pool_guard.constants import ENV_PREFIX
 from pool_guard.exceptions import ConfigError
-from pool_guard.config.schema import AppConfig
 
 
-def _deep_set(d: Dict[str, Any], keys: Tuple[str, ...], value: Any) -> None:
+def _deep_set(d: dict[str, Any], keys: tuple[str, ...], value: Any) -> None:
     cur = d
     for k in keys[:-1]:
         if k not in cur or not isinstance(cur[k], dict):
@@ -56,7 +56,7 @@ def load_config(path: str, dotenv_path: str | None = ".env") -> AppConfig:
         raise ConfigError(f"Config file not found: {path}")
 
     with p.open("r", encoding="utf-8") as f:
-        data: Dict[str, Any] = yaml.safe_load(f) or {}
+        data: dict[str, Any] = yaml.safe_load(f) or {}
 
     # Apply environment overrides: POOL_GUARD__a__b=... sets data["a"]["b"]
     for k, v in os.environ.items():
