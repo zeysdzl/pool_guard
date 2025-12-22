@@ -1,0 +1,6 @@
+-r base.txt
+pytest>=8.0
+ruff>=0.6
+mypy>=1.10
+types-PyYAML
+types-requests

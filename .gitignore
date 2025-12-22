@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# venv
+.venv/
+venv/
+
+# Runtime outputs
+runs/
+*.log
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# OS/IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Models / data (repo'ya koyma)
+models/
+data/
+*.pt
+*.onnx
+*.tflite

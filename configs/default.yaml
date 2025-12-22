@@ -1,0 +1,36 @@
+source:
+  kind: mp4        # şema rtsp/mp4 bekliyorsa fark etmez; uri "0" zaten webcam gibi açılacak
+  uri: "0"
+  fps_limit: 10
+  resize_width: 640
+  buffer_latest_only: true
+
+detector:
+  backend: stub
+
+classifier:
+  backend: stub
+
+zones:
+  - zone_id: danger
+    enabled: true
+    polygon:
+      - [0.10, 0.20]
+      - [0.90, 0.20]
+      - [0.90, 0.90]
+      - [0.10, 0.90]
+
+alarm:
+  cooldown_seconds: 15
+  gpio_pin: 18
+  http_webhook_url: ""
+
+api:
+  enabled: false
+  host: "0.0.0.0"
+  port: 8000
+  show_frame: true
+
+pipeline:
+  draw_debug: true
+  headless: false
