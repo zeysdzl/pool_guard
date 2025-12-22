@@ -1,24 +1,36 @@
-[project]
-name = "pool-guard"
-version = "0.1.0"
-requires-python = ">=3.10"
-description = "Pool Guard - Edge AI Pool Safety"
-readme = "README.md"
+name: CI
 
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
 
-[tool.ruff]
-target-version = "py312"
+permissions:
+  contents: read
 
-[tool.ruff.lint]
-# E: syntax / runtime errors
-# F: undefined names, unused imports
-# I: import order
-select = ["E", "F", "I"]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
 
-# MVP aşamasında gereksiz sertlik
-ignore = ["B905"]
+    steps:
+      - uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
 
-[tool.mypy]
-# MVP'DE MYpy KAPALI KABUL EDİLİR
-ignore_errors = true
+      - name: Install dependencies
+        run: |
+          python -m pip install -U pip
+          python -m pip install -r requirements/dev.txt
+
+      - name: Lint
+        run: python -m ruff check .
+
+      - name: Tests
+        run: python -m pytest -q
