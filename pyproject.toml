@@ -1,36 +1,27 @@
-name: CI
+[project]
+name = "pool-guard"
+version = "0.1.0"
+requires-python = ">=3.10"
+description = "Pool Guard - Edge AI Pool Safety"
+readme = "README.md"
 
-on:
-  push:
-    branches: ["main"]
-  pull_request:
-    branches: ["main"]
-  workflow_dispatch:
+[tool.ruff]
+target-version = "py312"
+line-length = 120
 
-permissions:
-  contents: read
+[tool.ruff.lint]
+select = ["E", "F"]
+ignore = [
+  "E501",  # line length
+  "I001",  # import order
+  "B905",
+]
 
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: pip
-
-      - name: Install dependencies
-        run: |
-          python -m pip install -U pip
-          python -m pip install -r requirements/dev.txt
-
-      - name: Lint
-        run: python -m ruff check .
-
-      - name: Tests
-        run: python -m pytest -q
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+check_untyped_defs = true
+disallow_untyped_defs = false
+no_implicit_optional = true
+ignore_missing_imports = true
