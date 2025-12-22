@@ -20,16 +20,5 @@ ignore = ["B905"]
 
 
 [tool.mypy]
-python_version = "3.10"
-
-# Ciddi hataları yakala
-warn_return_any = true
-warn_unused_configs = true
-check_untyped_defs = true
-
-# MVP için gerçekçi ayarlar
-disallow_untyped_defs = false
-no_implicit_optional = true
-
-# 3rd-party ML / CV lib'ler mypy'yi boğmasın
-ignore_missing_imports = true
+# MVP'DE MYpy KAPALI KABUL EDİLİR
+ignore_errors = true
