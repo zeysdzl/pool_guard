@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -U pip
+          python -m pip install -r requirements/dev.txt
+
+      - name: Lint
+        run: |
+          python -m ruff check .
+
+      - name: Typecheck
+        run: |
+          python -m mypy src/pool_guard
+
+      - name: Tests
+        run: |
+          python -m pytest -q
