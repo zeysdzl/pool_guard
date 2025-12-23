@@ -39,3 +39,6 @@ dist/
 # local test media (do not commit)
 sample.mp4
 *.mp4
+
+runs/
+*.pth
