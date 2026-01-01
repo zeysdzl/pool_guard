@@ -1,5 +1,0 @@
--r base.txt
-# GPU stack is environment-specific; pin in your org's constraints if needed.
-ultralytics>=8.2
-torch
-torchvision

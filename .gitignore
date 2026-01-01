@@ -1,58 +1,32 @@
-# -----------------------------
-# Python
-# -----------------------------
+# --- Python & Cache ---
 __pycache__/
 *.py[cod]
+.pytest_cache/
+.ruff_cache/
+.vscode/
 
-# -----------------------------
-# Virtual environments
-# -----------------------------
+# --- Virtual Environment ---
 .venv/
 venv/
+env/
 
-# -----------------------------
-# Runtime / outputs
-# -----------------------------
+# --- Models & Data (ASLA GİTMEZ) ---
+*.pt
+*.onnx
+*.tflite
+pool_guard_data/
+pool_guard_models/
+models/*.pt
+
+# --- Local Runs & Logs ---
 runs/
 *.log
+*.mp4
+*.avi
 
-# -----------------------------
-# Secrets (never commit)
-# -----------------------------
+# --- Secrets ---
 .env
-.env.*
-!.env.example
 
-# -----------------------------
-# OS / IDE
-# -----------------------------
+# --- OS Junk ---
 .DS_Store
 Thumbs.db
-.vscode/
-.idea/
-
-# -----------------------------
-# Models / data / artifacts (never commit)
-# -----------------------------
-artifacts/
-models/
-data/
-
-*.pt
-*.pth
-*.onnx
-*.engine
-*.tflite
-
-# -----------------------------
-# Local media (never commit)
-# -----------------------------
-*.mp4
-
-# -----------------------------
-# Build / packaging
-# -----------------------------
-*.egg-info/
-src/*.egg-info/
-build/
-dist/
