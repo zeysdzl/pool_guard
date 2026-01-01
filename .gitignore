@@ -1,44 +1,58 @@
+# -----------------------------
 # Python
+# -----------------------------
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
 
-# venv
+# -----------------------------
+# Virtual environments
+# -----------------------------
 .venv/
 venv/
 
-# Runtime outputs
+# -----------------------------
+# Runtime / outputs
+# -----------------------------
 runs/
 *.log
 
-# Secrets
+# -----------------------------
+# Secrets (never commit)
+# -----------------------------
 .env
 .env.*
 !.env.example
 
-# OS/IDE
+# -----------------------------
+# OS / IDE
+# -----------------------------
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
 
-# Models / data (repo'ya koyma)
+# -----------------------------
+# Models / data / artifacts (never commit)
+# -----------------------------
+artifacts/
 models/
 data/
+
 *.pt
+*.pth
 *.onnx
+*.engine
 *.tflite
 
-# build / packaging artifacts
+# -----------------------------
+# Local media (never commit)
+# -----------------------------
+*.mp4
+
+# -----------------------------
+# Build / packaging
+# -----------------------------
 *.egg-info/
 src/*.egg-info/
 build/
 dist/
-
-# local test media (do not commit)
-sample.mp4
-*.mp4
-
-runs/
-*.pth
