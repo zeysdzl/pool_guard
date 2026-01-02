@@ -2,61 +2,68 @@ import argparse
 import cv2
 import time
 import os
-import json
+import numpy as np
+
 from detectors.yolo_detector import YoloDetector
+from classifiers.classifier import PersonClassifier
 from utils.drawing import draw_detections, draw_fps, draw_zone
 from utils.geometry import is_point_in_polygon
 from scripts.zone_editor import select_zone
 
-# Kayıt dosyası yolu
 ZONE_PATH = "zone.json"
 
 def main():
-    parser = argparse.ArgumentParser(description="Pool Guard MVP")
+    parser = argparse.ArgumentParser(description="Pool Guard - Final System")
     parser.add_argument("--source", type=str, default="0", help="Webcam index")
-    parser.add_argument("--weights", type=str, default="models/best.pt")
+    
+    # --- KRİTİK DÜZELTME: Senin özel YOLO modelin ---
+    parser.add_argument("--weights", type=str, default="models/person_yolov8n.pt", help="Detection Model")
+    
+    # --- Yeni Eğittiğimiz Güçlü ResNet ---
+    parser.add_argument("--cls_model", type=str, default="models/resnet50_best.pth", help="Classification Model")
+    
     parser.add_argument("--conf", type=float, default=0.25)
     args = parser.parse_args()
 
-    # --- KESİN ÇÖZÜM: Eski dosyayı fiziksel olarak sil ---
+    # --- Temizlik ---
     if os.path.exists(ZONE_PATH):
-        try:
-            os.remove(ZONE_PATH)
-            print("🧹 Eski bölge dosyası silindi (Temiz başlangıç).")
-        except Exception as e:
-            print(f"Uyarı: Dosya silinemedi: {e}")
+        try: os.remove(ZONE_PATH)
+        except: pass
 
-    # 1. Kamerayı Aç
+    # 1. Kamera ve Bölge
     source = int(args.source) if args.source.isdigit() else args.source
     cap = cv2.VideoCapture(source)
     if not cap.isOpened():
         print("❌ Hata: Kamera açılamadı.")
         return
-
-    # 2. Çizim Modunu Başlat (Dosya silindiği için mecbur açılacak)
-    print("✏️  Çizim modu başlatılıyor...")
-    zone_poly = select_zone(cap)
     
-    # Eğer çizim yapmadan kapatırsa (boş dönerse)
+    print("✏️  Güvenlik Bölgesini Çiziniz...")
+    zone_poly = select_zone(cap)
     if not zone_poly or len(zone_poly) < 3:
-        print("⚠️  Bölge çizilmedi! Program kapatılıyor.")
-        cap.release()
         return
 
-    print(f"✅ Yeni bölge kaydedildi ({len(zone_poly)} nokta). Tespit başlıyor...")
-
-    # 3. Model Yükle
-    print(f"Model: {args.weights}")
+    # 2. Modelleri Yükle
+    print(f"🔹 Dedektör Yükleniyor: {args.weights}")
+    if not os.path.exists(args.weights):
+        print(f"❌ HATA: {args.weights} bulunamadı! Lütfen dosya adını kontrol et.")
+        return
     detector = YoloDetector(args.weights, conf_threshold=args.conf)
     
+    print(f"🔹 Sınıflandırıcı Yükleniyor: {args.cls_model}")
+    if not os.path.exists(args.cls_model):
+        print(f"❌ HATA: {args.cls_model} bulunamadı!")
+        return
+    classifier = PersonClassifier(model_path=args.cls_model)
+
+    print("🚀 SİSTEM BAŞLATILDI! (Person YOLO + ResNet50)")
     prev_time = 0
-    
-    # 4. Tespit Döngüsü
+
+    # 3. Ana Döngü
     while True:
         ret, frame = cap.read()
         if not ret: break
 
-        # Tespit
+        # A. İnsanları Bul (Detect)
         raw_detections = detector.detect(frame)
         
         final_detections = []
@@ -65,18 +72,35 @@ def main():
         for det in raw_detections:
             x1, y1, x2, y2, conf, cls_id = det
             
-            # Ayak noktası (bbox alt orta)
             foot_point = ((x1 + x2) // 2, y2)
             
-            # Bölge Kontrolü
-            is_danger = False
+            # B. Bölgede mi?
+            is_in_zone = False
             if zone_poly:
-                is_danger = is_point_in_polygon(foot_point, zone_poly)
+                is_in_zone = is_point_in_polygon(foot_point, zone_poly)
             
-            if is_danger:
-                alarm_active = True
+            # C. Sınıflandır (Classify)
+            label = "unknown"
+            child_score = 0.0
+            is_danger = False
             
-            final_detections.append([x1, y1, x2, y2, conf, cls_id, is_danger])
+            # Resmi Kırp ve ResNet'e Sor
+            h, w, _ = frame.shape
+            cx1, cy1 = max(0, x1), max(0, y1)
+            cx2, cy2 = min(w, x2), min(h, y2)
+            
+            if cx2 > cx1 and cy2 > cy1:
+                person_crop = frame[cy1:cy2, cx1:cx2]
+                label, child_score = classifier.predict(person_crop)
+            
+            # D. ALARM MANTIĞI 🚨
+            # Eğer Bölgedeyse VE (Çocuksa VEYA Model %50'den fazla eminse)
+            if is_in_zone:
+                if label == "child" and child_score > 0.5:
+                    is_danger = True
+                    alarm_active = True
+            
+            final_detections.append([x1, y1, x2, y2, label, child_score, is_danger])
 
         # Çizimler
         draw_zone(frame, zone_poly, alarm_active)
@@ -88,11 +112,8 @@ def main():
         prev_time = curr_time
         draw_fps(frame, fps)
 
-        cv2.imshow("Pool Guard", frame)
-        
-        # Gecikmeyi 50ms yaptık (Tuşları daha iyi algılasın diye)
-        if cv2.waitKey(50) & 0xFF == ord('q'): 
-            break
+        cv2.imshow("Pool Guard Final", frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'): break
 
     cap.release()
     cv2.destroyAllWindows()

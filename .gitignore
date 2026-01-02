@@ -30,3 +30,8 @@ runs/
 # --- OS Junk ---
 .DS_Store
 Thumbs.db
+models/*.pth
+
+models/*.pt
+
+runs/
