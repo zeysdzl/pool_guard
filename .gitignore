@@ -35,3 +35,4 @@ models/*.pth
 models/*.pt
 
 runs/
+docs/

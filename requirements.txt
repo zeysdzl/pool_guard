@@ -1,4 +1,6 @@
 ultralytics
 opencv-python
 numpy
-tdqm
+tqdm
+torch
+torchvision

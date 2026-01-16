@@ -6,7 +6,6 @@ import numpy as np
 import uuid # Benzersiz dosya ismi için
 
 from detectors.yolo_detector import YoloDetector
-from classifiers.classifier import PersonClassifier
 from utils.drawing import draw_detections, draw_fps, draw_zone
 from utils.geometry import is_point_in_polygon
 from scripts.zone_editor import select_zone
@@ -14,12 +13,10 @@ from scripts.zone_editor import select_zone
 ZONE_PATH = "zone.json"
 
 def main():
-    parser = argparse.ArgumentParser(description="Pool Guard - Active Learning Mode")
+    parser = argparse.ArgumentParser(description="Pool Guard - YOLO Child/Adult Detection")
     parser.add_argument("--source", type=str, default="0", help="Webcam/Video")
-    # Senin Eğittiğin Özel Model
-    parser.add_argument("--weights", type=str, default="models/my_custom_yolov8.pt")
-    # Keras'tan vazgeçip tekrar orijinal ResNet modeline dönüyoruz
-    parser.add_argument("--cls_model", type=str, default="models/resnet50_best.pth")
+    # YOLO Child/Adult Detection Model
+    parser.add_argument("--weights", type=str, default="models/YOLOV5S_child_adult.pt")
     parser.add_argument("--conf", type=float, default=0.25)
     
     # 🔥 YENİ ÖZELLİK: Eğitim verisi toplama modu
@@ -42,9 +39,9 @@ def main():
         except: pass
     zone_poly = select_zone(cap)
     
-    # Modellerin Yüklenmesi
+    # YOLO Model Yüklenmesi (Child/Adult Detection)
     detector = YoloDetector(args.weights, conf_threshold=args.conf)
-    classifier = PersonClassifier(model_path=args.cls_model)
+    print("✅ YOLO Child/Adult Detection Model Yüklendi")
     
     prev_time = 0
 
@@ -57,39 +54,33 @@ def main():
         alarm_active = False
         
         for det in raw_detections:
-            x1, y1, x2, y2, conf, cls_id = det
+            x1, y1, x2, y2, conf, cls_id, label = det
             
             # Koordinat ve Zone kontrolü
             foot_point = ((x1 + x2) // 2, y2)
             is_in_zone = is_point_in_polygon(foot_point, zone_poly) if zone_poly else False
             
-            # Kırpma İşlemi (Görüntü sınırları dışına çıkmamak için max/min kontrolü)
-            h, w, _ = frame.shape
-            cx1, cy1 = max(0, x1), max(0, y1)
-            cx2, cy2 = min(w, x2), min(h, y2)
-            
-            label = "unknown"
-            child_score = 0.0
             is_danger = False
 
-            if cx2 > cx1 and cy2 > cy1:
-                person_crop = frame[cy1:cy2, cx1:cx2]
-                # ResNet Sınıflandırıcı tahmini
-                label, child_score = classifier.predict(person_crop)
-                
-                # 🔥 VERİ KAYDETME (Active Learning)
-                if args.collect_data and int(time.time() * 10) % 5 == 0:
+            # 🔥 VERİ KAYDETME (Active Learning) - Only crop when needed for saving
+            if args.collect_data:
+                h, w, _ = frame.shape
+                cx1, cy1 = max(0, x1), max(0, y1)
+                cx2, cy2 = min(w, x2), min(h, y2)
+                if cx2 > cx1 and cy2 > cy1 and int(time.time() * 10) % 5 == 0:
+                    person_crop = frame[cy1:cy2, cx1:cx2]
                     unique_name = f"{label}_{uuid.uuid4().hex[:8]}.jpg"
                     save_path = os.path.join("collected_data", "unknown", unique_name)
                     cv2.imwrite(save_path, person_crop)
 
-            # Alarm ve Tehlike Kontrolü
+            # Alarm ve Tehlike Kontrolü - Use YOLO confidence directly
             if is_in_zone:
-                if label == "child" and child_score > 0.5:
+                if label == "child" and conf > 0.5:
                     is_danger = True
                     alarm_active = True
             
-            final_detections.append([x1, y1, x2, y2, label, child_score, is_danger])
+            # Use YOLO confidence score directly (not child_score)
+            final_detections.append([x1, y1, x2, y2, label, conf, is_danger])
 
         # Çizimler
         draw_zone(frame, zone_poly, alarm_active)
@@ -101,7 +92,7 @@ def main():
         prev_time = curr_time
         draw_fps(frame, fps)
 
-        cv2.imshow("Pool Guard ResNet Mode", frame)
+        cv2.imshow("Pool Guard - YOLO Mode", frame)
         if cv2.waitKey(1) & 0xFF == ord('q'): break
 
     cap.release()

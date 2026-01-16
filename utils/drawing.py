@@ -3,7 +3,9 @@ import numpy as np
 
 def draw_detections(frame, detections):
     """
-    Beklenen format: [[x1, y1, x2, y2, label, child_score, is_danger], ...]
+    Beklenen format: [[x1, y1, x2, y2, label, confidence, is_danger], ...]
+    label: 'adult' or 'child' (from YOLO model)
+    confidence: YOLO detection confidence score (0.0-1.0)
     """
     for det in detections:
         x1, y1, x2, y2, label, score, is_danger = det
