@@ -14,12 +14,8 @@ env/
 *.pt
 *.onnx
 *.tflite
-pool_guard_data/
-pool_guard_models/
-models/*.pt
 
 # --- Local Runs & Logs ---
-runs/
 *.log
 *.mp4
 *.avi
@@ -31,8 +27,12 @@ runs/
 .DS_Store
 Thumbs.db
 models/*.pth
+zone.json
 
-models/*.pt
-
+models/
 runs/
 docs/
+collected_data/
+scripts/
+
+*.json

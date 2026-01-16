@@ -7,7 +7,7 @@ import uuid # Benzersiz dosya ismi için
 
 from detectors.yolo_detector import YoloDetector
 from utils.drawing import draw_detections, draw_fps, draw_zone
-from utils.geometry import is_point_in_polygon
+from utils.geometry import is_point_in_polygon, distance_to_polygon_boundary
 from scripts.zone_editor import select_zone
 
 ZONE_PATH = "zone.json"
@@ -25,8 +25,11 @@ def main():
 
     # Klasör Hazırlığı
     if args.collect_data:
-        os.makedirs("collected_data/unknown", exist_ok=True)
-        print("📸 VERİ TOPLAMA MODU AKTİF: Resimler 'collected_data' klasörüne kaydedilecek.")
+        os.makedirs("collected_data/to_label", exist_ok=True)
+        print("📸 ACTIVE LEARNING MODU AKTİF:")
+        print("   - Belirsiz tespitler (0.25-0.60 güven) kaydedilecek")
+        print("   - Zone sınırına yakın çocuklar kaydedilecek")
+        print("   - Resimler 'collected_data/to_label/' klasörüne kaydedilecek")
 
     # Kamera ve Video Kaynağı
     source = int(args.source) if args.source.isdigit() else args.source
@@ -40,7 +43,9 @@ def main():
     zone_poly = select_zone(cap)
     
     # YOLO Model Yüklenmesi (Child/Adult Detection)
-    detector = YoloDetector(args.weights, conf_threshold=args.conf)
+    # Enable Pi 5 optimization if running on Raspberry Pi
+    optimize_pi = os.environ.get('RASPBERRY_PI', '').lower() == 'true'
+    detector = YoloDetector(args.weights, conf_threshold=args.conf, optimize_for_pi=optimize_pi)
     print("✅ YOLO Child/Adult Detection Model Yüklendi")
     
     prev_time = 0
@@ -62,16 +67,38 @@ def main():
             
             is_danger = False
 
-            # 🔥 VERİ KAYDETME (Active Learning) - Only crop when needed for saving
-            if args.collect_data:
+            # 🔥 ENHANCED ACTIVE LEARNING - Smart Data Collection
+            should_save = False
+            save_reason = ""
+            
+            if args.collect_data and zone_poly:
                 h, w, _ = frame.shape
                 cx1, cy1 = max(0, x1), max(0, y1)
                 cx2, cy2 = min(w, x2), min(h, y2)
-                if cx2 > cx1 and cy2 > cy1 and int(time.time() * 10) % 5 == 0:
-                    person_crop = frame[cy1:cy2, cx1:cx2]
-                    unique_name = f"{label}_{uuid.uuid4().hex[:8]}.jpg"
-                    save_path = os.path.join("collected_data", "unknown", unique_name)
-                    cv2.imwrite(save_path, person_crop)
+                
+                if cx2 > cx1 and cy2 > cy1:
+                    # Check 1: Uncertain detections (confidence between 0.25 and 0.60)
+                    if 0.25 <= conf <= 0.60:
+                        should_save = True
+                        save_reason = "uncertain"
+                    
+                    # Check 2: Child detected near zone boundary (within 50 pixels)
+                    elif label == "child":
+                        boundary_dist = distance_to_polygon_boundary(foot_point, zone_poly)
+                        if boundary_dist <= 50:  # Within 50 pixels of boundary
+                            should_save = True
+                            save_reason = "boundary"
+                    
+                    # Save with metadata in filename
+                    if should_save:
+                        # Throttle: Save max 1 image per second per detection
+                        current_time = int(time.time())
+                        unique_name = f"{label}_{conf:.2f}_{save_reason}_{current_time}_{uuid.uuid4().hex[:6]}.jpg"
+                        save_path = os.path.join("collected_data", "to_label", unique_name)
+                        
+                        # Efficient crop (no copy, direct slice)
+                        person_crop = frame[cy1:cy2, cx1:cx2]
+                        cv2.imwrite(save_path, person_crop)
 
             # Alarm ve Tehlike Kontrolü - Use YOLO confidence directly
             if is_in_zone:
